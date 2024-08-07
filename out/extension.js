@@ -28,6 +28,8 @@ const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const summary_1 = require("./component/summary");
+const initView_1 = require("./component/initView");
+const utils_1 = require("./utils");
 class ExtensionComponent {
     context;
     constructor(context) {
@@ -51,14 +53,19 @@ class RTFSViewManager extends ExtensionComponent {
         // if (!appConfig.initialized) {
         //     return WelcomeView
         // }
-        return new summary_1.SummaryView(this.context.extensionPath);
+        const currDir = (0, utils_1.getCurrentEditorFolderPath)();
+        if (currDir) {
+            const jsonPath = path.join(this.context.extensionPath, `graphs/${currDir}.json`);
+            console.log("JSONPATH: ", jsonPath);
+            const jsonData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+            return new summary_1.SummaryView(jsonData);
+        }
+        return new initView_1.InitView(this.context.extensionPath);
     }
     updateWebview(panel) {
         const view = this.getView();
-        console.log("Getting view: ", view);
         panel.webview.html = view.getWebviewContent();
         panel.webview.onDidReceiveMessage((data) => {
-            console.log("Data: ", data);
             view.registerViewFuncs(data);
         });
     }

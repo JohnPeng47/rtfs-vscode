@@ -25,15 +25,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SummaryView = void 0;
 const vscode = __importStar(require("vscode"));
-const path = __importStar(require("path"));
-const fs = __importStar(require("fs"));
 const htmlView_1 = require("./htmlView");
 class SummaryView extends htmlView_1.HTMLView {
-    constructor(extensionPath) {
+    constructor(nodes) {
         super();
-        const jsonPath = path.join(extensionPath, 'data.json');
-        const jsonData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-        this.nodes = jsonData;
+        this.nodes = nodes;
     }
     ;
     nodes;

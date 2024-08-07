@@ -26,11 +26,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCurrentEditorFolderPath = getCurrentEditorFolderPath;
 const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
+// export function getCurrentEditorFolderPath(): string | undefined {
+//     const activeEditor = vscode.window.activeTextEditor;
+//     if (activeEditor) {
+//         const currentFilePath = activeEditor.document.uri.fsPath;
+//         return path.dirname(currentFilePath);
+//     }
+//     return undefined;
+// }
 function getCurrentEditorFolderPath() {
-    const activeEditor = vscode.window.activeTextEditor;
-    if (activeEditor) {
-        const currentFilePath = activeEditor.document.uri.fsPath;
-        return path.dirname(currentFilePath);
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+        // Return the path of the first (or only) workspace folder
+        return path.basename(workspaceFolders[0].uri.fsPath);
     }
     return undefined;
 }

@@ -4,6 +4,7 @@ import * as path from 'path';
 
 import { HTMLView } from './component/htmlView';
 import { SummaryView } from './component/summary';
+import { InitView } from './component/initView';
 import { getCurrentEditorFolderPath } from './utils';
 
 interface AppConfig {
@@ -44,7 +45,15 @@ class RTFSViewManager extends ExtensionComponent {
         //     return WelcomeView
         // }
 
-        return new SummaryView(this.context.extensionPath)
+        const currDir = getCurrentEditorFolderPath()
+        if (currDir) {
+            const jsonPath = path.join(this.context.extensionPath, `graphs/${currDir}.json`);
+            const jsonData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+      
+            return new SummaryView(jsonData)            
+        }
+        
+        return new InitView(this.context.extensionPath);
     }
 
     private updateWebview(panel: vscode.WebviewPanel) {        

@@ -20,12 +20,10 @@ interface GraphNode {
 
 
 export class SummaryView extends HTMLView {
-  public constructor(extensionPath: string) {
+  public constructor(nodes: GraphNode[]) {
       super();
 
-      const jsonPath = path.join(extensionPath, 'data.json');
-      const jsonData = JSON.parse(fs.readFileSync(jsonPath, 'utf8')) as GraphNode[];
-      this.nodes = jsonData;
+      this.nodes = nodes;
   };
   private nodes: GraphNode[];
 
