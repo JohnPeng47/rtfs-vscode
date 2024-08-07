@@ -25,99 +25,47 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 const vscode = __importStar(require("vscode"));
-const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+const summary_1 = require("./component/summary");
+class ExtensionComponent {
+    context;
+    constructor(context) {
+        this.context = context;
+    }
+}
+class RTFSViewManager extends ExtensionComponent {
+    register_component() {
+        let disposable = vscode.commands.registerCommand('myextension.openHtmlTab', () => {
+            const panel = vscode.window.createWebviewPanel('htmlView', 'HTML View', vscode.ViewColumn.Beside, {
+                enableScripts: true
+            });
+            this.updateWebview(panel);
+        });
+        this.context.subscriptions.push(disposable);
+    }
+    getView() {
+        const initialized = false;
+        const p = path.join(this.context.extensionPath, 'app.json');
+        const appConfig = JSON.parse(fs.readFileSync(p, 'utf8'));
+        // if (!appConfig.initialized) {
+        //     return WelcomeView
+        // }
+        return new summary_1.SummaryView(this.context.extensionPath);
+    }
+    updateWebview(panel) {
+        const view = this.getView();
+        console.log("Getting view: ", view);
+        panel.webview.html = view.getWebviewContent();
+        panel.webview.onDidReceiveMessage((data) => {
+            console.log("Data: ", data);
+            view.registerViewFuncs(data);
+        });
+    }
+}
 function activate(context) {
     console.log('Extension is now active!');
-    let disposable = vscode.commands.registerCommand('myextension.openHtmlTab', () => {
-        const panel = vscode.window.createWebviewPanel('htmlView', 'HTML View', vscode.ViewColumn.Beside, {
-            enableScripts: true
-        });
-        updateWebview(panel, context.extensionUri);
-    });
-    context.subscriptions.push(disposable);
-}
-function updateWebview(panel, extensionUri) {
-    const jsonPath = path.join(extensionUri.fsPath, 'data.json');
-    const jsonData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-    const content = generateHtmlContent(jsonData);
-    panel.webview.html = getWebviewContent(content);
-    panel.webview.onDidReceiveMessage(async (data) => {
-        if (data.type === 'openLink') {
-            openLink(data.filePath, data.lineNumber);
-        }
-    });
-}
-function generateHtmlContent(nodes) {
-    return nodes.map(node => generateNodeHtml(node)).join('');
-}
-function generateNodeHtml(node, level = 0) {
-    console.log(node);
-    const indent = '  '.repeat(level);
-    let html = `
-${indent}<details>
-${indent}  <summary>${escapeHtml(node.title)}</summary>
-${indent}  <p><strong>Keywords:</strong> ${escapeHtml(node.keywords.join(', '))}</p>
-${indent}  <p><strong>Summary:</strong> ${escapeHtml(node.summary)}</p>
-${indent}  <ul>
-${node.chunks.map(chunk => `${indent}    <li><button onclick="openLink('${chunk.file_path}', ${chunk.start_line})">Open ${escapeHtml(chunk.id)}</button></li>`).join('\n')}
-${indent}  </ul>
-`;
-    if (node.children.length > 0) {
-        html += `${indent}  <div class="children">
-${node.children.map(child => generateNodeHtml(child, level + 2)).join('\n')}
-${indent}  </div>
-`;
-    }
-    html += `${indent}</details>`;
-    return html;
-}
-function escapeHtml(unsafe) {
-    return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-function getWebviewContent(content) {
-    return `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>HTML View</title>
-            <style>
-                body { font-family: Arial, sans-serif; padding: 20px; }
-                button { cursor: pointer; padding: 5px 10px; }
-                .children { margin-left: 20px; }
-            </style>
-        </head>
-        <body>
-            <div id="content">${content}</div>
-            <script>
-                const vscode = acquireVsCodeApi();
-                function openLink(filePath, lineNumber) {
-                    vscode.postMessage({ type: 'openLink', filePath: filePath, lineNumber: lineNumber });
-                }
-            </script>
-        </body>
-        </html>
-    `;
-}
-async function openLink(filePath, lineNumber) {
-    const openPath = vscode.Uri.file(filePath);
-    console.log("Opening filepath: ", filePath);
-    try {
-        const document = await vscode.workspace.openTextDocument(openPath);
-        const editor = await vscode.window.showTextDocument(document);
-        const range = editor.document.lineAt(lineNumber).range;
-        editor.selection = new vscode.Selection(range.start, range.end);
-        editor.revealRange(range);
-    }
-    catch (error) {
-        vscode.window.showErrorMessage(`Failed to open file: ${filePath}`);
-    }
+    const manager = new RTFSViewManager(context);
+    manager.register_component();
 }
 //# sourceMappingURL=extension.js.map
